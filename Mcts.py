@@ -36,8 +36,8 @@ class Mcts:
 
     def get_best_action(self, board):
         """
+        使用白棋视角判断最优选择
         :param board:  当前棋盘
-        :param player:  玩家
         :return best_action: 下一步最优动作
         """
         for i in range(self.args.num_mcts_search):
@@ -47,59 +47,33 @@ class Mcts:
         # 这里将采样次数转化成对应的模拟概率
         s = self.game.to_string(board)
         # 断言：当前棋盘在字典N中
-        assert s in self.N
-        # self.N[s] += 1
+        assert s in self.N   # 此处 N 偶尔比真实次数少 1
         # print('Mcts-get_best_action: ', self.N[s])
-        # 如果一个动作存在Ns_start记录中，则将该点设为 Ns_start[(s, a)]，不存在时设为0 ////counts_start:[1:100]
+        # 如果一个动作存在Ns_start记录中，则将该点设为 Ns_start[(s, a)]，else 0
         counts_start = [self.N_start[(s, a)] if (s, a) in self.N_start else 0 for a in range(self.game.board_size**2)]
-        # softmax ，将整个1*100的起始点的采样数N转换成概率模式//[0，0，0，0.3，0，0，0，0.21，0..........]
+        # 归一化
         p_start = [x / float(self.N[s]) for x in counts_start]
         counts_end = [self.N_end[(s, a)] if (s, a) in self.N_end else 0 for a in range(self.game.board_size**2)]
         p_end = [x / float(self.N[s]) for x in counts_end]
         counts_arrow = [self.N_arrow[(s, a)] if (s, a) in self.N_arrow else 0 for a in range(self.game.board_size**2)]
         p_arrow = [x / float(self.N[s]) for x in counts_arrow]
         # 方法二：使用softmax策略选择动作
+        # pi：整理完的 3 * board_size 长度的概率分布，不可能到的点直接概率为 0
         pi = p_start
         pi = np.append(pi, p_end)
         pi = np.append(pi, p_arrow)
 
-        # 将局面和策略顺时针旋转180度，返回4个棋盘和策略组成的元组
+        # 存储每步棋的 4 * [board, WHITE, pi] 数据
         steps_train_data = []
+        # 将局面和策略顺时针旋转180度，返回4个棋盘和策略组成的元组
         sym = self.game.get_symmetries(board, pi)
         for boards, pis in sym:
             steps_train_data.append([boards, WHITE, pis])
-        pi_start = pi[0:self.game.board_size**2]
-        pi_end = pi[self.game.board_size**2:2 * self.game.board_size**2]
-        pi_arrow = pi[2 * self.game.board_size**2:3 * self.game.board_size**2]
-        # 深拷贝
-        copy_board = np.copy(board)
-        # 选择下一步最优动作
-        # print(sum(pi_start), sum(pi_end), sum(pi_arrow))
-        # assert sum(pi_start) == 1
-        # assert sum(pi_end) == 1
-        # assert sum(pi_arrow) == 1
-        while True:
-            # 将1*100的策略概率的数组传入得到 0~99 的行动点 , action_start,end,arrow都是选出来的点 eg: 43,65....
-            action_start = np.random.choice(len(pi_start), p=pi_start)
-            # print('start:', action_start)
-            action_end = np.random.choice(len(pi_end), p=pi_end)
-            # print('end', action_end)
-            action_arrow = np.random.choice(len(pi_arrow), p=pi_arrow)
-            # print('arrow', action_arrow)
-            # 加断言保证起子点有棋子，落子点和放箭点均无棋子
-            # assert copy_board[action_start // self.game.board_size][action_start % self.game.board_size] == WHITE
-            # assert copy_board[action_end // self.game.board_size][action_end % self.game.board_size] == EMPTY
-            # assert copy_board[action_arrow // self.game.board_size][action_arrow % self.game.board_size] == EMPTY
-            if self.game.is_legal_move(copy_board, action_start, action_end):
-                copy_board[action_start // self.game.board_size][action_start % self.game.board_size] = EMPTY
-                copy_board[action_end // self.game.board_size][action_end % self.game.board_size] = WHITE
-                if self.game.is_legal_move(copy_board, action_end, action_arrow):
-                    best_action = [action_start, action_end, action_arrow]
-                    # 跳出While循环
-                    break
-                else:
-                    copy_board[action_start // self.game.board_size][action_start % self.game.board_size] = WHITE
-                    copy_board[action_end // self.game.board_size][action_end % self.game.board_size] = EMPTY
+
+        # 使用依概率随机策略选择下一步
+        # best_action = self.get_action_on_random_pi(board, pi)
+        # 使用最大概率对应的值进行训练
+        best_action = self.get_action_on_max_pi(board, pi)
         return best_action, steps_train_data
 
     def search(self, board):
@@ -136,9 +110,7 @@ class Mcts:
         best_action = -1
         psa = list()                  # 状态转移概率，长度为当前状态下可走的动作数
 
-        # 将选点概率P转换成动作的概率
-        # print(legal_actions)
-        # print(self.Pi[board_key])
+        # 将选点概率 Pi 转换成动作的概率 psa
         for a in legal_actions:
             p = 0
             for i in [0, 1, 2]:
@@ -196,3 +168,61 @@ class Mcts:
         self.N[board_key] += 1
 
         return -v
+
+    def get_action_on_random_pi(self, board, pi):
+        """
+        使用依概率随机策略选择下一步
+        :param board: 棋盘
+        :param pi: 整体概率
+        :return best_action: 依概率随机选择的动作
+        """
+
+        pi_start = pi[0:self.game.board_size**2]
+        pi_end = pi[self.game.board_size**2:2 * self.game.board_size**2]
+        pi_arrow = pi[2 * self.game.board_size**2:3 * self.game.board_size**2]
+        # 深拷贝
+        copy_board = np.copy(board)
+        while True:
+            # 将1*100的策略概率的数组传入得到 0~99 的行动点 , action_start,end,arrow都是选出来的点 eg: 43,65....
+            action_start = np.random.choice(len(pi_start), p=pi_start)
+            # print('start:', action_start)
+            action_end = np.random.choice(len(pi_end), p=pi_end)
+            # print('end', action_end)
+            action_arrow = np.random.choice(len(pi_arrow), p=pi_arrow)
+            # print('arrow', action_arrow)
+            # 加断言保证起子点有棋子，落子点和放箭点均无棋子
+            assert copy_board[action_start // self.game.board_size][action_start % self.game.board_size] == WHITE
+            assert copy_board[action_end // self.game.board_size][action_end % self.game.board_size] == EMPTY
+            # 不能断言箭的位置一定位空，有可能是该位置是皇后
+            if self.game.is_legal_move(copy_board, action_start, action_end):
+                copy_board[action_start // self.game.board_size][action_start % self.game.board_size] = EMPTY
+                copy_board[action_end // self.game.board_size][action_end % self.game.board_size] = WHITE
+                if self.game.is_legal_move(copy_board, action_end, action_arrow):
+                    best_action = [action_start, action_end, action_arrow]
+                    # 跳出While循环
+                    break
+                else:
+                    copy_board[action_start // self.game.board_size][action_start % self.game.board_size] = WHITE
+                    copy_board[action_end // self.game.board_size][action_end % self.game.board_size] = EMPTY
+        return best_action
+
+    def get_action_on_max_pi(self, board, pi):
+        poo, legal_actions = self.game.get_valid_actions(board, WHITE, pi)
+        max_pi = -float('inf')
+        best_action = []
+        for a in legal_actions:
+            p = 0
+            for i in [0, 1, 2]:
+                # 此处不能加断言是因为 Mcts 不可能把所有的动作都探索完，所以会导致有些动作点概率为0
+                if pi[a[i] + i * self.game.board_size ** 2] == 0:
+                    break
+                p += math.log(pi[a[i] + i * self.game.board_size ** 2])
+                if p > max_pi:
+                    max_pi = p
+                    best_action = a
+        return best_action
+
+
+
+
+

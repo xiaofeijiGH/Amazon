@@ -23,7 +23,7 @@ args = dotdict({
     'num_iter': 1000,          # 神经网络训练次数
     'num_play_game': 10,       # 下“num_play_game”盘棋训练一次NNet
     'max_len_queue': 200000,   # 双向列表最大长度
-    'num_mcts_search': 500,   # 从某状态模拟搜索到叶结点次数
+    'num_mcts_search': 2000,   # 从某状态模拟搜索到叶结点次数
     'max_batch_size': 20,      # NNet每次训练的最大数据量
     'Cpuct': 0.3,                # 置信上限函数中的“温度”超参数
     'arenaCompare': 40,
@@ -56,29 +56,29 @@ class TrainMode:
     # 调用NNet开始训练
     def learn(self):
         for i in range(1, self.args.num_iter + 1):
-            print('#######################################################################################')
+            print('')
             print('####################################  IterNum： ' + str(i) + ' ####################################')
-            print('#######################################################################################')
-
+            print('下', self.args.num_play_game, '盘棋训练一次NNet')
+            print('MCTS搜索模拟次数：', self.args.num_mcts_search)
             # 每次都执行
             if not self.skipFirstSelfPlay or i > 1:
                 # deque：双向队列  max_len：队列最大长度：self.args.max_len_queue
+                # 每次训练的 [board, WHITE, pi] 数据
                 iter_train_data = deque([], maxlen=self.args.max_len_queue)
 
                 # 下“num_play_game”盘棋训练一次NNet
-                for i in range(self.args.num_play_game):
+                for j in range(self.args.num_play_game):
                     # 重置搜索树
-                    print("====================================== 第", i+1, "盘棋 ======================================")
+                    print("====================================== 第", j+1, "盘棋 ======================================")
                     self.mcts = Mcts(self.game, self.nnet, self.args)
                     self.player = WHITE
                     iter_train_data += self.play_one_game()
-                print('白棋赢：', self.num_white_win, '盘；', '黑棋赢：', self.num_black_win, '盘')
+                print('TrainMode.py-learn()', '白棋赢：', self.num_white_win, '盘；', '黑棋赢：', self.num_black_win, '盘')
                 # 打印一次迭代后给NN的数据
-                print(len(iter_train_data))
+                print('TrainMode.py-learn()', len(iter_train_data))
                 # save the iteration examples to the history
                 self.batch.append(iter_train_data)
 
-            # 不断更新训练数据
             # 如果 训练数据 大于规定的训练长度，则将最旧的数据删除
             if len(self.batch) > self.args.max_batch_size:
                 print("len(max_batch_size) =", len(self.batch),
@@ -125,6 +125,7 @@ class TrainMode:
         使用Mcts完整下一盘棋
         :return: 4 * [(board, pi, z)] : 返回四个训练数据元组：（棋盘，策略，输赢）
         """
+        # 每盘棋的 [board, WHITE, pi] 数据
         one_game_train_data = []
         board = self.game.get_init_board(self.game.board_size)
         play_step = 0
@@ -135,13 +136,16 @@ class TrainMode:
             print('第', play_step, '步')
             print(board)
             self.mcts.episodeStep = play_step
-            # 在MCTS中，始终以白棋视角选择
+            # 在Mcts中，始终以白棋视角选择
             transformed_board = self.game.get_transformed_board(board, self.player)
             # 进行多次mcts搜索得出来概率（以白棋视角）
             next_action, steps_train_data = self.mcts.get_best_action(transformed_board)
             one_game_train_data += steps_train_data
             te = time.time()
-            print("下一步：", next_action, '用时：', int(te-ts), 's')
+            if self.player == WHITE:
+                print("                             白棋走：", next_action, '搜索：', int(te-ts), 's')
+            else:
+                print("                             黑棋走：", next_action, '搜索：', int(te - ts), 's')
             board, self.player = self.game.get_next_state(board, self.player, next_action)
 
             r = self.game.get_game_ended(board, self.player)
