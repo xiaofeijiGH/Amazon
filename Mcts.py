@@ -34,7 +34,7 @@ class Mcts:
         self.N_end = {}
         self.N_arrow = {}
 
-    def get_best_action(self, board, player):
+    def get_best_action(self, board):
         """
         :param board:  当前棋盘
         :param player:  玩家
@@ -67,7 +67,7 @@ class Mcts:
         steps_train_data = []
         sym = self.game.get_symmetries(board, pi)
         for boards, pis in sym:
-            steps_train_data.append([boards, player, pis])
+            steps_train_data.append([boards, WHITE, pis])
         pi_start = pi[0:self.game.board_size**2]
         pi_end = pi[self.game.board_size**2:2 * self.game.board_size**2]
         pi_arrow = pi[2 * self.game.board_size**2:3 * self.game.board_size**2]

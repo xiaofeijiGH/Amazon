@@ -136,7 +136,7 @@ class Game:
         ps_start = ps[0:size ** 2]
         ps_end = ps[size ** 2:2 * size ** 2]
         ps_arrow = ps[2 * size ** 2:3 * size ** 2]
-
+        # 定义三个棋盘长度的列表：可到达为 1 else 0
         valid_start = np.zeros(size ** 2, dtype=int)
         valid_end = np.zeros(size ** 2, dtype=int)
         valid_arrow = np.zeros(size ** 2, dtype=int)
