@@ -5,4 +5,4 @@ class NNet:
         self.board_size = game.board_size
 
     def predict(self, board):
-        return [random.random() for i in range(3 * self.board_size ** 2)], 1
+        return [random.random() for i in range(3 * self.board_size ** 2)], random.random() - 0.5
