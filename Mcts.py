@@ -102,7 +102,6 @@ class Mcts:
             # 存储该状态下所有可行动作
             self.Actions[board_key] = legal_actions
             self.N[board_key] = 0
-            self.Qsa[board_key] = 0
             return -v
         legal_actions = self.Actions[board_key]
         best_uct = -float('inf')
