@@ -41,13 +41,14 @@ class Mcts:
         :return best_action: 下一步最优动作
         """
         for i in range(self.args.num_mcts_search):
-            # print('第', i, '次搜索')
+            # print('==============================第', i, '次搜索=================================')
             self.search(board)
 
         # 这里将采样次数转化成对应的模拟概率
         s = self.game.to_string(board)
         # 断言：当前棋盘在字典N中
         assert s in self.N   # 此处 N 偶尔比真实次数少 1
+        # print(self.N[s])
         # print('Mcts-get_best_action: ', self.N[s])
         # 如果一个动作存在Ns_start记录中，则将该点设为 Ns_start[(s, a)]，else 0
         counts_start = [self.N_start[(s, a)] if (s, a) in self.N_start else 0 for a in range(self.game.board_size**2)]
@@ -98,7 +99,6 @@ class Mcts:
             # print(len(self.Pi[board_key]))
             # 始终寻找白棋可走的行动
             self.Pi[board_key], legal_actions = self.game.get_valid_actions(board, WHITE, self.Pi[board_key])
-
             # 存储该状态下所有可行动作
             self.Actions[board_key] = legal_actions
             self.N[board_key] = 0
@@ -119,19 +119,24 @@ class Mcts:
             psa.append(p)
         psa = np.array(psa)
         psa = np.exp(psa) / sum(np.exp(psa))
+        # print('------------------------------------------------------------')
+        # print(sum(psa), '可选动作数：', len(psa))   # 近似等于 1
+
         # 求置信上限函数：Q + Cpuct * p * ((Ns/Nsa)的开方)
         for i, a in enumerate(legal_actions):              # enumerate():将一个元组加上序号，其中 i 为序号：0，1.... a为中的legal_actions元组
             if (board_key, a[0], a[1], a[2]) in self.Qsa:  # board_key:棋盘字符串，a[0], a[1], a[2]分别为起始点，落子点，放箭点
-                uct = self.Qsa[(board_key, a[0], a[1], a[2])] + self.args.Cpuct * psa[i] * math.sqrt(self.N[board_key])\
-                      / (1 + self.Nsa[(board_key, a[0], a[1], a[2])])
+                u = self.args.Cpuct * psa[i] * math.sqrt(self.N[board_key]) / (1 + self.Nsa[(board_key, a[0], a[1], a[2])])
+                uct = self.Qsa[(board_key, a[0], a[1], a[2])] + u
+                # print('遍历过的动作', a, 'Q值', self.Qsa[(board_key, a[0], a[1], a[2])], 'U值', u, 'UCT', uct)
 
             else:
                 uct = self.args.Cpuct * psa[i] * math.sqrt(self.N[board_key] + EPS)   # 防止乘积为0
-
+                # print('Qsa为0的点u值：', uct, a)
             if uct > best_uct:
                 best_uct = uct
                 best_action = a
 
+        # print('max_uct：', best_uct, 'best_action: ', best_action)
         a = best_action
         # next_player反转
         next_board, next_player = self.game.get_next_state(board, WHITE, a)
