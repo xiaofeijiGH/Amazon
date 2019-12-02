@@ -48,7 +48,7 @@ class Mcts:
 
         # 断言：当前棋盘在字典N中
         assert s in self.N   # 此处 N 偶尔比真实次数少 1
-        print(self.N[s])
+        # print(self.N[s])
         # print('Mcts-get_best_action: ', self.N[s])
         # 如果一个动作存在Ns_start记录中，则将该点设为 Ns_start[(s, a)]，else 0
         counts_start = [self.N_start[(s, a)] if (s, a) in self.N_start else 0 for a in range(self.game.board_size**2)]
@@ -59,24 +59,24 @@ class Mcts:
         counts_arrow = [self.N_arrow[(s, a)] if (s, a) in self.N_arrow else 0 for a in range(self.game.board_size**2)]
         p_arrow = [x / float(self.N[s]) for x in counts_arrow]
 
-        '''
-            打印
-        '''
-        for i in range(3*self.game.board_size**2):
-            if i < self.game.board_size**2:
-                if i == 0:
-                    print('选皇后位置--------由NN处理过的概率----------探索次数')
-                print(i, ':------------', self.Pi[s][i], ':-----', counts_start[i])
-            elif i < 2*self.game.board_size**2:
-                if i == self.game.board_size**2:
-                    print('放皇后位置--------由NN处理过的概率----------探索次数')
-                print(i-self.game.board_size**2, ':------------', self.Pi[s][i], ':-----', counts_end[i-self.game.board_size**2])
-            else:
-                if i == 2*self.game.board_size**2:
-                    print('放箭位置--------由NN处理过的概率----------探索次数')
-                print(i - 2*self.game.board_size**2, ':------------', self.Pi[s][i], ':-----', counts_arrow[i-2*self.game.board_size**2])
+        # '''
+        #     打印
+        # '''
+        # for i in range(3*self.game.board_size**2):
+        #     if i < self.game.board_size**2:
+        #         if i == 0:
+        #             print('选皇后位置--------由NN处理过的概率----------探索次数')
+        #         print(i, ':------------', self.Pi[s][i], ':-----', counts_start[i])
+        #     elif i < 2*self.game.board_size**2:
+        #         if i == self.game.board_size**2:
+        #             print('放皇后位置--------由NN处理过的概率----------探索次数')
+        #         print(i-self.game.board_size**2, ':------------', self.Pi[s][i], ':-----', counts_end[i-self.game.board_size**2])
+        #     else:
+        #         if i == 2*self.game.board_size**2:
+        #             print('放箭位置--------由NN处理过的概率----------探索次数')
+        #         print(i - 2*self.game.board_size**2, ':------------', self.Pi[s][i], ':-----', counts_arrow[i-2*self.game.board_size**2])
+
         # 方法二：使用softmax策略选择动作
-        # pi：整理完的 3 * board_size 长度的概率分布，不可能到的点直接概率为 0
         pi = p_start
         pi = np.append(pi, p_end)
         pi = np.append(pi, p_arrow)
@@ -97,7 +97,7 @@ class Mcts:
     def search(self, board):
         """
         对状态进行一次递归的模拟搜索，添加各状态（棋盘）的访问结点信息（始终以白棋视角存储）
-        :param board_copy: 棋盘当前
+        :param board: 棋盘当前
         :return: None
         """
         board_copy = np.copy(board)
@@ -230,7 +230,7 @@ class Mcts:
 
     def get_action_on_max_pi(self, board, pi):
         poo, legal_actions = self.game.get_valid_actions(board, WHITE, pi)
-        print(pi)
+        # print(pi)
         max_pi = -float('inf')
         best_action = []
         for a in legal_actions:
@@ -241,7 +241,7 @@ class Mcts:
                     p = -float('inf')
                     break
                 p += math.log(pi[a[i] + i * self.game.board_size ** 2])
-            print(a, p)
+            # print(a, p)
             if p > max_pi:
                 max_pi = p
                 best_action = a
