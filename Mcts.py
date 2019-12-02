@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from random import shuffle
 
 EPS = 1e-8
 BLACK = -2
@@ -40,15 +41,14 @@ class Mcts:
         :param board:  当前棋盘
         :return best_action: 下一步最优动作
         """
+        s = self.game.to_string(board)
         for i in range(self.args.num_mcts_search):
             # print('==============================第', i, '次搜索=================================')
             self.search(board)
 
-        # 这里将采样次数转化成对应的模拟概率
-        s = self.game.to_string(board)
         # 断言：当前棋盘在字典N中
         assert s in self.N   # 此处 N 偶尔比真实次数少 1
-        # print(self.N[s])
+        print(self.N[s])
         # print('Mcts-get_best_action: ', self.N[s])
         # 如果一个动作存在Ns_start记录中，则将该点设为 Ns_start[(s, a)]，else 0
         counts_start = [self.N_start[(s, a)] if (s, a) in self.N_start else 0 for a in range(self.game.board_size**2)]
@@ -58,6 +58,23 @@ class Mcts:
         p_end = [x / float(self.N[s]) for x in counts_end]
         counts_arrow = [self.N_arrow[(s, a)] if (s, a) in self.N_arrow else 0 for a in range(self.game.board_size**2)]
         p_arrow = [x / float(self.N[s]) for x in counts_arrow]
+
+        '''
+            打印
+        '''
+        for i in range(3*self.game.board_size**2):
+            if i < self.game.board_size**2:
+                if i == 0:
+                    print('选皇后位置--------由NN处理过的概率----------探索次数')
+                print(i, ':------------', self.Pi[s][i], ':-----', counts_start[i])
+            elif i < 2*self.game.board_size**2:
+                if i == self.game.board_size**2:
+                    print('放皇后位置--------由NN处理过的概率----------探索次数')
+                print(i-self.game.board_size**2, ':------------', self.Pi[s][i], ':-----', counts_end[i-self.game.board_size**2])
+            else:
+                if i == 2*self.game.board_size**2:
+                    print('放箭位置--------由NN处理过的概率----------探索次数')
+                print(i - 2*self.game.board_size**2, ':------------', self.Pi[s][i], ':-----', counts_arrow[i-2*self.game.board_size**2])
         # 方法二：使用softmax策略选择动作
         # pi：整理完的 3 * board_size 长度的概率分布，不可能到的点直接概率为 0
         pi = p_start
@@ -80,13 +97,14 @@ class Mcts:
     def search(self, board):
         """
         对状态进行一次递归的模拟搜索，添加各状态（棋盘）的访问结点信息（始终以白棋视角存储）
-        :param board: 棋盘当前
+        :param board_copy: 棋盘当前
         :return: None
         """
-        board_key = self.game.to_string(board)
+        board_copy = np.copy(board)
+        board_key = self.game.to_string(board_copy)
         # 判断是否胜负已分（叶子节点）
         if board_key not in self.Game_End:
-            self.Game_End[board_key] = self.game.get_game_ended(board, WHITE)
+            self.Game_End[board_key] = self.game.get_game_ended(board_copy, WHITE)
 
         if self.Game_End[board_key] != 0:
             # print("模拟到根节点", self.Game_End[board_key])
@@ -95,10 +113,10 @@ class Mcts:
         # 判断board_key是否为新扩展的节点
         if board_key not in self.Pi:
             # 由神经网路预测策略与v([-1,1]) PS[s] 为[1:300]数组
-            self.Pi[board_key], v = self.nnet.predict(board)
+            self.Pi[board_key], v = self.nnet.predict(board_copy)
             # print(len(self.Pi[board_key]))
             # 始终寻找白棋可走的行动
-            self.Pi[board_key], legal_actions = self.game.get_valid_actions(board, WHITE, self.Pi[board_key])
+            self.Pi[board_key], legal_actions = self.game.get_valid_actions(board_copy, WHITE, self.Pi[board_key])
             # 存储该状态下所有可行动作
             self.Actions[board_key] = legal_actions
             self.N[board_key] = 0
@@ -120,8 +138,8 @@ class Mcts:
         psa = np.exp(psa) / sum(np.exp(psa))
         # print('------------------------------------------------------------')
         # print(sum(psa), '可选动作数：', len(psa))   # 近似等于 1
-
-        # 求置信上限函数：Q + Cpuct * p * ((Ns/Nsa)的开方)
+        # shuffle(legal_actions)
+        # 求置信上限函数：Q + Cpuct * p * (Ns的开方)/ Nsa
         for i, a in enumerate(legal_actions):              # enumerate():将一个元组加上序号，其中 i 为序号：0，1.... a为中的legal_actions元组
             if (board_key, a[0], a[1], a[2]) in self.Qsa:  # board_key:棋盘字符串，a[0], a[1], a[2]分别为起始点，落子点，放箭点
                 u = self.args.Cpuct * psa[i] * math.sqrt(self.N[board_key]) / (1 + self.Nsa[(board_key, a[0], a[1], a[2])])
@@ -138,7 +156,7 @@ class Mcts:
         # print('max_uct：', best_uct, 'best_action: ', best_action)
         a = best_action
         # next_player反转
-        next_board, next_player = self.game.get_next_state(board, WHITE, a)
+        next_board, next_player = self.game.get_next_state(board_copy, WHITE, a)
         # 下一个状态，将棋盘颜色反转 (next_player = BLACK)
         next_board = self.game.get_transformed_board(next_board, next_player)
 
@@ -212,6 +230,7 @@ class Mcts:
 
     def get_action_on_max_pi(self, board, pi):
         poo, legal_actions = self.game.get_valid_actions(board, WHITE, pi)
+        print(pi)
         max_pi = -float('inf')
         best_action = []
         for a in legal_actions:
@@ -219,11 +238,13 @@ class Mcts:
             for i in [0, 1, 2]:
                 # 此处不能加断言是因为 Mcts 不可能把所有的动作都探索完，所以会导致有些动作点概率为0
                 if pi[a[i] + i * self.game.board_size ** 2] == 0:
+                    p = -float('inf')
                     break
                 p += math.log(pi[a[i] + i * self.game.board_size ** 2])
-                if p > max_pi:
-                    max_pi = p
-                    best_action = a
+            print(a, p)
+            if p > max_pi:
+                max_pi = p
+                best_action = a
         return best_action
 
 
