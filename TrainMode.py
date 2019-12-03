@@ -152,7 +152,7 @@ class TrainMode:
 
 
 if __name__ == "__main__":
-    game = Game(5)
+    game = Game(4)
     nnet = NNet(game)
     train = TrainMode(game, nnet)
     train.learn()
