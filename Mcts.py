@@ -250,7 +250,7 @@ class Mcts:
                     p = -float('inf')
                     break
                 p += math.log(pi[a[i] + i * self.game.board_size ** 2])
-            # print(a, p)
+            # print(a, np.exp(p) * 100)
             if p > max_pi:
                 max_pi = p
                 best_action = a
