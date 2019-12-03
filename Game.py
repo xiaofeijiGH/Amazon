@@ -144,19 +144,20 @@ class Game:
         all_valid_action = []  # 储存合法的步伐
         for s in range(size ** 2):  # 挑选出合法的步伐
             if b[s // size][s % size] == player:
-                valid_start[s] = 1
-                for e in range(size ** 2):
-                    if self.is_legal_move(b, s, e):
-                        valid_end[e] = 1
-                        b[s // size][s % size] = EMPTY
-                        b[e // size][e % size] = player
-                        for a in range(size ** 2):
-                            if self.is_legal_move(b, e, a):
-                                valid_arrow[a] = 1
-                                valid = (s, e, a)
-                                all_valid_action.append(valid)
-                        b[s // size][s % size] = player
-                        b[e // size][e % size] = EMPTY
+                if self.judge_start_eghit_direction(b,s):
+                    valid_start[s] = 1
+                    for e in range(size ** 2):
+                        if self.is_legal_move(b, s, e):
+                            valid_end[e] = 1
+                            b[s // size][s % size] = EMPTY
+                            b[e // size][e % size] = player
+                            for a in range(size ** 2):
+                                if self.is_legal_move(b, e, a):
+                                    valid_arrow[a] = 1
+                                    valid = (s, e, a)
+                                    all_valid_action.append(valid)
+                            b[s // size][s % size] = player
+                            b[e // size][e % size] = EMPTY
         for s in range(size ** 2):
             if valid_start[s] == 0:
                 ps_start[s] = 0
@@ -300,6 +301,13 @@ class Game:
                     board[i][j] = WHITE
         return board
 
+    def judge_start_eghit_direction(self,board,s):
+        #防止数组越界，先判断
+        for a in self.directions:
+            if (s // self.board_size + a[0]) >= 0 and (s % self.board_size + a[1]) >= 0 and (s // self.board_size + a[0]) < self.board_size and (s % self.board_size + a[1]) < self.board_size:
+                if board[s // self.board_size + a[0]][s % self.board_size + a[1]] == 0:
+                    return True
+        return False
     def to_string(self, board):
         """
         将棋盘转换成字符串，为后面使用棋盘做字典的key做准备
