@@ -26,7 +26,7 @@ class Mcts:
 
         self.Game_End = {}        # 输赢状态字典
         self.Actions = {}         # 某状态下所有可走的行动
-        self.Pi = {}              # 行动时选点的概率 value: 3 * board_size 的一维列表
+        self.Pi = {}              # 行动时选点的概率 value: 3 * board_size **2 的一维列表
         self.N = {}               # 某状态的访问次数
         self.Nsa = {}             # 某状态s+动作a（下一状态）访问次数 == N[s+1]
         self.Qsa = {}             # 某状态s+动作a（下一个状态）的奖励值
@@ -117,6 +117,11 @@ class Mcts:
             # print(len(self.Pi[board_key]))
             # 始终寻找白棋可走的行动
             self.Pi[board_key], legal_actions = self.game.get_valid_actions(board_copy, WHITE, self.Pi[board_key])
+            #print(legal_actions.shape)
+            # 存储该状态下所有可行动作
+            self.Actions[board_key] = legal_actions
+            self.N[board_key] = 0
+            #print('第一次的', self.Qsa)
             # 存储该状态下所有可行动作
             self.Actions[board_key] = legal_actions
             self.N[board_key] = 0
@@ -134,8 +139,11 @@ class Mcts:
                 assert self.Pi[board_key][a[i] + i * self.game.board_size ** 2] > 0
                 p += math.log(self.Pi[board_key][a[i] + i * self.game.board_size ** 2])
             psa.append(p)
+        # print('第一次打印', psa)
         psa = np.array(psa)
+        # print('第二次打印', psa)
         psa = np.exp(psa) / sum(np.exp(psa))
+        # print('第三次打印', psa)
         # print('------------------------------------------------------------')
         # print(sum(psa), '可选动作数：', len(psa))   # 近似等于 1
         # 求置信上限函数：Q + Cpuct * p * (Ns的开方)/ Nsa

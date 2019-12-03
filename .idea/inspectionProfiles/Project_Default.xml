@@ -5,8 +5,6 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="utils.WritelnMixin" />
-          <option value="BLACK" />
-          <option value="WHITE" />
         </list>
       </option>
     </inspection_tool>
