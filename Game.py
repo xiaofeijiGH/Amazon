@@ -136,7 +136,7 @@ class Game:
         ps_start = ps[0:size ** 2]
         ps_end = ps[size ** 2:2 * size ** 2]
         ps_arrow = ps[2 * size ** 2:3 * size ** 2]
-
+        # 定义三个棋盘长度的列表：可到达为 1 else 0
         valid_start = np.zeros(size ** 2, dtype=int)
         valid_end = np.zeros(size ** 2, dtype=int)
         valid_arrow = np.zeros(size ** 2, dtype=int)
@@ -161,9 +161,9 @@ class Game:
         for s in range(size ** 2):
             if valid_start[s] == 0:
                 ps_start[s] = 0
-        sum = np.sum(ps_start)
-        if sum > 0:
-            ps_start /= sum
+        sum_s = np.sum(ps_start)
+        if sum_s > 0:
+            ps_start /= sum_s
         else:
             print("All start moves were masked, do workaround.")
             # ps_start[valid_start == 1] = 0.25
@@ -174,18 +174,18 @@ class Game:
         for e in range(size ** 2):
             if valid_end[e] == 0:
                 ps_end[e] = 0
-        sum = np.sum(ps_end)
-        if sum > 0:
-            ps_end /= sum
+        sum_e = np.sum(ps_end)
+        if sum_e > 0:
+            ps_end /= sum_e
         else:
             print("All end moves were masked, do workaround.")
 
         for a in range(size ** 2):
             if valid_arrow[a] == 0:
                 ps_arrow[a] = 0
-        sum = np.sum(ps_arrow)
-        if sum > 0:
-            ps_arrow /= sum
+        sum_a = np.sum(ps_arrow)
+        if sum_a > 0:
+            ps_arrow /= sum_a
         else:
             print("All arrow moves were masked, do workaround.")
 
