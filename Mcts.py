@@ -138,11 +138,11 @@ class Mcts:
         psa = np.exp(psa) / sum(np.exp(psa))
         # print('------------------------------------------------------------')
         # print(sum(psa), '可选动作数：', len(psa))   # 近似等于 1
-        # shuffle(legal_actions)
         # 求置信上限函数：Q + Cpuct * p * (Ns的开方)/ Nsa
         for i, a in enumerate(legal_actions):              # enumerate():将一个元组加上序号，其中 i 为序号：0，1.... a为中的legal_actions元组
             if (board_key, a[0], a[1], a[2]) in self.Qsa:  # board_key:棋盘字符串，a[0], a[1], a[2]分别为起始点，落子点，放箭点
                 u = self.args.Cpuct * psa[i] * math.sqrt(self.N[board_key]) / (1 + self.Nsa[(board_key, a[0], a[1], a[2])])
+                # sigmoid_u = 2 * (1/(1+np.exp(-u)) - 0.5)
                 uct = self.Qsa[(board_key, a[0], a[1], a[2])] + u
                 # print('遍历过的动作', a, 'Q值', self.Qsa[(board_key, a[0], a[1], a[2])], 'U值', u, 'UCT', uct)
 
@@ -229,6 +229,7 @@ class Mcts:
         return best_action
 
     def get_action_on_max_pi(self, board, pi):
+
         poo, legal_actions = self.game.get_valid_actions(board, WHITE, pi)
         # print(pi)
         max_pi = -float('inf')

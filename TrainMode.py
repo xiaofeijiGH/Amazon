@@ -21,11 +21,11 @@ class dotdict(dict):
 # 训练模式的参数
 args = dotdict({
     'num_iter': 1000,          # 神经网络训练次数
-    'num_play_game': 100,       # 下“num_play_game”盘棋训练一次NNet
+    'num_play_game': 10,       # 下“num_play_game”盘棋训练一次NNet
     'max_len_queue': 200000,   # 双向列表最大长度
-    'num_mcts_search': 400,   # 从某状态模拟搜索到叶结点次数
+    'num_mcts_search': 1000,   # 从某状态模拟搜索到叶结点次数
     'max_batch_size': 20,      # NNet每次训练的最大数据量
-    'Cpuct': 1,                # 置信上限函数中的“温度”超参数
+    'Cpuct': 2,                # 置信上限函数中的“温度”超参数
     'arenaCompare': 40,
     'tempThreshold': 35,       # 探索效率
     'updateThreshold': 0.55,
@@ -164,7 +164,7 @@ class TrainMode:
 
 
 if __name__ == "__main__":
-    game = Game(4)
+    game = Game(5)
     nnet = NNet(game)
     train = TrainMode(game, nnet)
     train.learn()
