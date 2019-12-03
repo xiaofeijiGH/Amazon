@@ -2,7 +2,7 @@ import time
 from collections import deque
 from random import shuffle
 from Game import Game
-import numpy as np
+
 from Mcts import Mcts
 from NNet import NNet
 
