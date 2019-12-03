@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from random import shuffle
+from PrintAction import  PrintAction
 
 EPS = 1e-8
 BLACK = -2
@@ -92,6 +92,8 @@ class Mcts:
         # best_action = self.get_action_on_random_pi(board, pi)
         # 使用最大概率对应的值进行训练
         best_action = self.get_action_on_max_pi(board, pi)
+        p = PrintAction(self.game)
+        p.print_action(board,WHITE,pi)
         return best_action, steps_train_data
 
     def search(self, board):
