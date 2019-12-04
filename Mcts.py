@@ -93,7 +93,7 @@ class Mcts:
         # 使用最大概率对应的值进行训练
         best_action = self.get_action_on_max_pi(board, pi)
         p = PrintAction(self.game)
-        p.print_action(board,WHITE,pi)
+        p.print_action(board, pi)
         return best_action, steps_train_data
 
     def search(self, board):
