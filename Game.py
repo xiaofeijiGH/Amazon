@@ -131,6 +131,7 @@ class Game:
                  Ps -->1 * 300：[0.2， 0.02， 0.23，......]   动作：all_valid_action -->[(s, e, a),......]
         """
         b = board.copy()
+        # ps = np.copy(ps)
         size = self.board_size  # 棋盘的尺寸
 
         ps_start = ps[0:size ** 2]
