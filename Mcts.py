@@ -92,8 +92,8 @@ class Mcts:
         # best_action = self.get_action_on_random_pi(board, pi)
         # 使用最大概率对应的值进行训练
         best_action = self.get_action_on_max_pi(board, pi)
-        p = PrintAction(self.game)
-        p.print_action(board, pi)
+        # p = PrintAction(self.game)
+        # p.print_action(board, pi)
         return best_action, steps_train_data
 
     def search(self, board):
@@ -116,7 +116,8 @@ class Mcts:
         if board_key not in self.Pi:
             # 由神经网路预测策略与v([-1,1]) PS[s] 为[1:300]数组
             self.Pi[board_key], v = self.nnet.predict(board_copy)
-            # print(len(self.Pi[board_key]))
+            # print(len(self.Pi[board_key]), self.Pi[board_key])
+            # print(v)
             # 始终寻找白棋可走的行动
             self.Pi[board_key], legal_actions = self.game.get_valid_actions(board_copy, WHITE, self.Pi[board_key])
             #print(legal_actions.shape)
