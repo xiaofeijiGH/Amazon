@@ -89,9 +89,9 @@ class Mcts:
             steps_train_data.append([boards, WHITE, pis])
 
         # 使用依概率随机策略选择下一步
-        # best_action = self.get_action_on_random_pi(board, pi)
+        best_action = self.get_action_on_random_pi(board, pi)
         # 使用最大概率对应的值进行训练
-        best_action = self.get_action_on_max_pi(board, pi)
+        # best_action = self.get_action_on_max_pi(board, pi)
         # p = PrintAction(self.game)
         # p.print_action(board, pi)
         return best_action, steps_train_data
