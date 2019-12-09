@@ -1,11 +1,14 @@
+import os
+import sys
 import time
 from collections import deque
 from random import shuffle
 from Game import Game
-
+from utils.dotdict import dotdict
+from pickle import Pickler, Unpickler
 from Mcts import Mcts
 from NNet import NNet
-
+from PrintBoard import PrintBoard
 
 BLACK = -2
 WHITE = 2
@@ -16,17 +19,12 @@ EMPTY = 0
 ARROW = 1
 
 
-class dotdict(dict):
-    def __getattr__(self, name):
-        return self[name]
-
-
 # 训练模式的参数
 args = dotdict({
-    'num_iter': 1000,          # 神经网络训练次数
+    'num_iter': 10,            # 神经网络训练次数
     'num_play_game': 10,       # 下“num_play_game”盘棋训练一次NNet
     'max_len_queue': 200000,   # 双向列表最大长度
-    'num_mcts_search': 400,   # 从某状态模拟搜索到叶结点次数
+    'num_mcts_search': 1000,   # 从某状态模拟搜索到叶结点次数
     'max_batch_size': 20,      # NNet每次训练的最大数据量
     'Cpuct': 1,                # 置信上限函数中的“温度”超参数
     'arenaCompare': 40,
@@ -76,6 +74,7 @@ class TrainMode:
                     self.mcts = Mcts(self.game, self.nnet, self.args)
                     self.player = WHITE
                     iter_train_data += self.play_one_game()
+                    pboard.save_figure(j + 1)
                 print('TrainMode.py-learn()', '白棋赢：', self.num_white_win, '盘；', '黑棋赢：', self.num_black_win, '盘')
                 # 打印一次迭代后给NN的数据
                 print('TrainMode.py-learn()', len(iter_train_data))
@@ -102,7 +101,7 @@ class TrainMode:
 
             # 这里保存的是一个temp也就是一直保存着最近一次的网络，这里是为了和最新的网络进行对弈
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            # self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
 
             # 开启训练
             self.nnet.train(standard_batch)
@@ -138,10 +137,12 @@ class TrainMode:
             print('---------------------------')
             print('第', play_step, '步')
             print(board)
+            pboard.print_board(board, play_step+1)
             self.mcts.episodeStep = play_step
             # 在Mcts中，始终以白棋视角选择
             transformed_board = self.game.get_transformed_board(board, self.player)
             # 进行多次mcts搜索得出来概率（以白棋视角）
+            self.mcts = Mcts(self.game, self.nnet, self.args)
             next_action, steps_train_data = self.mcts.get_best_action(transformed_board)
             one_game_train_data += steps_train_data
             te = time.time()
@@ -152,7 +153,7 @@ class TrainMode:
             board, self.player = self.game.get_next_state(board, self.player, next_action)
 
             r = self.game.get_game_ended(board, self.player)
-            if r != 0:  # 胜负已分
+            if r != 0:  # 胜负已分,r始终为 -1
                 if self.player == WHITE:
                     print('白棋输')
                     self.num_black_win += 1
@@ -162,11 +163,42 @@ class TrainMode:
                 print("##### 终局 #####")
                 print(board)
 
+                pboard.print_board(board, play_step)
+
                 return [(board, pi, r*((-1)**(player != self.player))) for board, player, pi in one_game_train_data]
+
+    def getCheckpointFile(self, iteration):
+        return 'checkpoint_' + str(iteration) + '.pth.tar'
+
+    def saveTrainExamples(self, iteration):
+        folder = self.args.checkpoint
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        filename = os.path.join(folder, self.getCheckpointFile(iteration)+".examples")
+        with open(filename, "wb+") as f:
+            Pickler(f).dump(self.batch)
+        f.closed
+
+    def loadTrainExamples(self):
+        modelFile = os.path.join(self.args.load_folder_file[0], self.args.load_folder_file[1])
+        examplesFile = modelFile+".examples"
+        if not os.path.isfile(examplesFile):
+            print(examplesFile)
+            r = input("File with trainExamples not found. Continue? [y|n]")
+            if r != "y":
+                sys.exit()
+        else:
+            print("File with trainExamples found. Read it.")
+            with open(examplesFile, "rb") as f:
+                self.batch = Unpickler(f).load()
+            f.closed
+            # examples based on the model were already collected (loaded)
+            self.skipFirstSelfPlay = True
 
 
 if __name__ == "__main__":
-    game = Game(4)
+    game = Game(5)
     nnet = NNet(game)
     train = TrainMode(game, nnet)
+    pboard = PrintBoard(game)
     train.learn()
