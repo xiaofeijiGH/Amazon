@@ -8,7 +8,7 @@ from utils.dotdict import dotdict
 from pickle import Pickler, Unpickler
 from Mcts import Mcts
 from NNet import NNet
-
+from PrintBoard import PrintBoard
 
 BLACK = -2
 WHITE = 2
@@ -50,7 +50,7 @@ class TrainMode:
         self.mcts = Mcts(self.game, self.nnet, self.args)
         self.batch = []                 # 每次给NNet喂的数据量,但类型不对（多维列表）
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
-
+        self.game_num = 1  # 下棋的局数
     # 调用NNet开始训练
     def learn(self):
         for i in range(1, self.args.num_iter + 1):
@@ -123,6 +123,7 @@ class TrainMode:
         使用Mcts完整下一盘棋
         :return: 4 * [(board, pi, z)] : 返回四个训练数据元组：（棋盘，策略，输赢）
         """
+        epoch = 1
         # 每盘棋的 [board, WHITE, pi] 数据
         one_game_train_data = []
         board = self.game.get_init_board(self.game.board_size)
@@ -133,6 +134,8 @@ class TrainMode:
             print('---------------------------')
             print('第', play_step, '步')
             print(board)
+            pboard.print_board(board, epoch)
+            epoch += 1
             self.mcts.episodeStep = play_step
             # 在Mcts中，始终以白棋视角选择
             transformed_board = self.game.get_transformed_board(board, self.player)
@@ -157,6 +160,9 @@ class TrainMode:
                     self.num_white_win += 1
                 print("##### 终局 #####")
                 print(board)
+
+                pboard.print_board(board, epoch)
+                pboard.print(self.game_num)
 
                 return [(board, pi, r*((-1)**(player != self.player))) for board, player, pi in one_game_train_data]
 
@@ -193,4 +199,5 @@ if __name__ == "__main__":
     game = Game(5)
     nnet = NNet(game)
     train = TrainMode(game, nnet)
+    pboard = PrintBoard(game)
     train.learn()
