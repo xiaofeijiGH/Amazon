@@ -1,27 +1,20 @@
-import numpy as np
-
 import matplotlib.pyplot as plt
-from Game import Game
 
 BLACK = -2
 WHITE = 2
 EMPTY = 0
 ARROW = 1
-#epoch = 5
-path = 'board.txt'
 board_size = 5
 
-class PrintBoard:
 
+class PrintBoard:
     def __init__(self, game):
         self.game = game
         self.board = game.board
         self.board_size = game.board_size
 
-    def print_board(self, board, epoch):
-        fo = open("board.txt", "w")
-        fo.write("\n")
-        fo.close()
+    @staticmethod
+    def print_board(board, epoch):
         white_chess_x = []
         white_chess_y = []
         black_chess_x = []
@@ -41,30 +34,26 @@ class PrintBoard:
                     arrow_x.append(j)
                     arrow_y.append(board_size - i)
         # print(board)
-#        print(np.array2string(board, separator=', '))
-
         plt.style.use('Solarize_Light2')
         plt.subplot(4, 5, epoch)
-#        print(plt.style.available)  # 显示背景风格种类
+        # print(plt.style.available)  # 显示背景风格种类
 
-        ax = plt.scatter(white_chess_x, white_chess_y, c='white', s=100, marker='s')
-        ax = plt.scatter(black_chess_x, black_chess_y, c='black', s=100, marker='s')
-        ax = plt.scatter(arrow_x, arrow_y, c='blue', s=100, marker='x')
+        plt.scatter(white_chess_x, white_chess_y, c='white', s=100, marker='s')
+        plt.scatter(black_chess_x, black_chess_y, c='black', s=100, marker='s')
+        plt.scatter(arrow_x, arrow_y, c='blue', s=100, marker='x')
         plt.axis('equal')  # 设置坐标为相等长度
         plt.grid()
         plt.xlim((-1, 5))
         plt.ylim((0, 6))
-
         epoch += 1
-        '''
-        np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
-        with open(path, 'a') as f:
-            f.write('\n\n')
-            f.write(np.array2string(board, separator=', '))
-        '''
-    def print(self, game_num):
+
+    @staticmethod
+    def save_figure(game_num):
+        """
+        保存图片到figures文件夹种
+        @parm game_num:当前游戏盘数
+        """
         plt.suptitle('The ' + str(game_num) + 'th game')
-        plt.savefig('E:\\PyCharm_workspaces\\NeuqAmazonGame\\figure' + str(game_num) + 'th_game.png')
+        # 此路径为绝对路径，更换计算机时注意修改
+        plt.savefig('E:\\PyCharm_workspaces\\NeuqAmazonGame\\figures\\' + str(game_num) + 'th_game.png')
         plt.show()
-
-

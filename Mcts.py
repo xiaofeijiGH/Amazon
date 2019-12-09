@@ -34,6 +34,7 @@ class Mcts:
         self.N_start = {}
         self.N_end = {}
         self.N_arrow = {}
+        self.p = PrintAction(self.game)
 
     def get_best_action(self, board):
         """
@@ -92,8 +93,7 @@ class Mcts:
         best_action = self.get_action_on_random_pi(board, pi)
         # 使用最大概率对应的值进行训练
         # best_action = self.get_action_on_max_pi(board, pi)
-        # p = PrintAction(self.game)
-        # p.print_action(board, pi)
+        self.p.print_action(board, pi)
         return best_action, steps_train_data
 
     def search(self, board):
@@ -120,11 +120,11 @@ class Mcts:
             # print(v)
             # 始终寻找白棋可走的行动
             self.Pi[board_key], legal_actions = self.game.get_valid_actions(board_copy, WHITE, self.Pi[board_key])
-            #print(legal_actions.shape)
+            # print(legal_actions.shape)
             # 存储该状态下所有可行动作
             self.Actions[board_key] = legal_actions
             self.N[board_key] = 0
-            #print('第一次的', self.Qsa)
+            # print('第一次的', self.Qsa)
             # 存储该状态下所有可行动作
             self.Actions[board_key] = legal_actions
             self.N[board_key] = 0
@@ -258,8 +258,3 @@ class Mcts:
                 max_pi = p
                 best_action = a
         return best_action
-
-
-
-
-

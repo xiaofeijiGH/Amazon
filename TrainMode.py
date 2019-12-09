@@ -18,8 +18,8 @@ ARROW = 1
 
 # 训练模式的参数
 args = dotdict({
-    'num_iter': 10,          # 神经网络训练次数
-    'num_play_game': 5,       # 下“num_play_game”盘棋训练一次NNet
+    'num_iter': 10,            # 神经网络训练次数
+    'num_play_game': 10,       # 下“num_play_game”盘棋训练一次NNet
     'max_len_queue': 200000,   # 双向列表最大长度
     'num_mcts_search': 1000,   # 从某状态模拟搜索到叶结点次数
     'max_batch_size': 20,      # NNet每次训练的最大数据量
@@ -50,7 +50,7 @@ class TrainMode:
         self.mcts = Mcts(self.game, self.nnet, self.args)
         self.batch = []                 # 每次给NNet喂的数据量,但类型不对（多维列表）
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
-        self.game_num = 1  # 下棋的局数
+
     # 调用NNet开始训练
     def learn(self):
         for i in range(1, self.args.num_iter + 1):
@@ -71,6 +71,7 @@ class TrainMode:
                     self.mcts = Mcts(self.game, self.nnet, self.args)
                     self.player = WHITE
                     iter_train_data += self.play_one_game()
+                    pboard.save_figure(j + 1)
                 print('TrainMode.py-learn()', '白棋赢：', self.num_white_win, '盘；', '黑棋赢：', self.num_black_win, '盘')
                 # 打印一次迭代后给NN的数据
                 print('TrainMode.py-learn()', len(iter_train_data))
@@ -123,7 +124,6 @@ class TrainMode:
         使用Mcts完整下一盘棋
         :return: 4 * [(board, pi, z)] : 返回四个训练数据元组：（棋盘，策略，输赢）
         """
-        epoch = 1
         # 每盘棋的 [board, WHITE, pi] 数据
         one_game_train_data = []
         board = self.game.get_init_board(self.game.board_size)
@@ -134,8 +134,7 @@ class TrainMode:
             print('---------------------------')
             print('第', play_step, '步')
             print(board)
-            pboard.print_board(board, epoch)
-            epoch += 1
+            pboard.print_board(board, play_step+1)
             self.mcts.episodeStep = play_step
             # 在Mcts中，始终以白棋视角选择
             transformed_board = self.game.get_transformed_board(board, self.player)
@@ -161,8 +160,7 @@ class TrainMode:
                 print("##### 终局 #####")
                 print(board)
 
-                pboard.print_board(board, epoch)
-                pboard.print(self.game_num)
+                pboard.print_board(board, play_step)
 
                 return [(board, pi, r*((-1)**(player != self.player))) for board, player, pi in one_game_train_data]
 

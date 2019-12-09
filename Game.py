@@ -302,14 +302,16 @@ class Game:
                     board[i][j] = WHITE
         return board
 
-    def judge_start_eghit_direction(self,board,s):
-        #防止数组越界，先判断
+    def judge_start_eghit_direction(self, board, s):
+        # 防止数组越界，先判断
         for a in self.directions:
             if (s // self.board_size + a[0]) >= 0 and (s % self.board_size + a[1]) >= 0 and (s // self.board_size + a[0]) < self.board_size and (s % self.board_size + a[1]) < self.board_size:
                 if board[s // self.board_size + a[0]][s % self.board_size + a[1]] == 0:
                     return True
         return False
-    def to_string(self, board):
+
+    @staticmethod
+    def to_string(board):
         """
         将棋盘转换成字符串，为后面使用棋盘做字典的key做准备
         :param board: n*n棋盘
