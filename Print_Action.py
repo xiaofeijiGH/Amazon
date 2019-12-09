@@ -11,12 +11,14 @@ class  Print_Action:
 
     def print_action(self,board,WHITE, pi):
         pro,legal_actions =self.game.get_valid_actions(board,WHITE,pi)
+        # print(pro==pi)
         action = []
         probaility = []
         for a in legal_actions:
             p = 0
             for i in [0,1,2]:
-                if pi[a[i] + i * self.game.board_size ** 2] == 0:
+                if pro[a[i] + i * self.game.board_size ** 2] == 0:
+                    p = -float('inf')    #如果点不合理需要重置概率
                     break
                 p += math.log(pi[a[i] + i*self.board_size**2])
             action.append((a[0],a[1],a[2]))

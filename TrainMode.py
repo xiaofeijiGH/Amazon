@@ -10,6 +10,9 @@ from NNet import NNet
 BLACK = -2
 WHITE = 2
 EMPTY = 0
+#Everything up-to-date
+
+
 ARROW = 1
 
 

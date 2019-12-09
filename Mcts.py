@@ -225,17 +225,23 @@ class Mcts:
         poo, legal_actions = self.game.get_valid_actions(board, WHITE, pi)
         max_pi = -float('inf')
         best_action = []
+        pro = []
         for a in legal_actions:
             p = 0
             for i in [0, 1, 2]:
                 # 此处不能加断言是因为 Mcts 不可能把所有的动作都探索完，所以会导致有些动作点概率为0
                 if pi[a[i] + i * self.game.board_size ** 2] == 0:
+                    p = -float('inf')
                     break
                 p += math.log(pi[a[i] + i * self.game.board_size ** 2])
-                if p > max_pi:
-                    max_pi = p
-                    best_action = a
+            pro.append(p)
+            if p > max_pi:
+                max_pi = p
+                best_action = a
+        # print(pro)
+        # print(max_pi)
         return best_action
+
 
 
 
